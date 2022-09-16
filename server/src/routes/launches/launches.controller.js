@@ -1,22 +1,32 @@
-const {launches,addNewLaunch,existLaunche,abortLaunchId}=require("../../models/launches.model")
-
-function abortLaunches(req,res){
+const {launches,addNewLaunch,existLaunche,abortLaunchId,getAllLaunchesDatabese}=require("../../models/launches.model")
+const {getPagination}=require("../../../services/query")
+async function abortLaunches(req,res){
     const launchid=Number( req.params.id)
+    const existid= await existLaunche(launchid);
     
-    if(!existLaunche){
+    if(!existid){
         return res.status(404).json({
             error:"Launche not found"
         })
     };
-    const aborted =abortLaunchId(launchid);
-    res.status(200).json(aborted)
+    
+    const aborted =await abortLaunchId(launchid);
+    if(!aborted){
+        return res.status(400).json({
+            error:"Launch not aborted"
+        })
+    }
+    res.status(200).json({
+        ok:true
+    })
     
 }
 
-function getAllLaunches(req,res){
-    res.status(200).json(Array.from(launches.values()))
+ async function getAllLaunches(req,res){
+    const {limit,skip}=getPagination(req.query)
+    res.status(200).json(await getAllLaunchesDatabese(limit,skip))
 };
-function addNewLaunches(req,res){
+ async function addNewLaunches(req,res){
 const launch=req.body;
 if(!launch.mission||!launch.rocket||!launch.launchDate||!launch.target){
     return res.status(400).json({
@@ -29,7 +39,7 @@ if(isNaN(launch.launchDate)){
         error:"invalid launch date"
     })
 }
-addNewLaunch(launch);
+await addNewLaunch(launch);
 return res.status(201).json(launch)
 };
 module.exports={
